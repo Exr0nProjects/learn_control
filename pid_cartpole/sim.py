@@ -9,7 +9,7 @@ env.x_threshold = 100
 env.theta_threshold_radians = pi
 
 FRAMERATE = 30
-P, I, D = 0.09, 0.0009, 0.13
+P, I, D = 0.09, 0.0013, 0.80
 # P, I, D = 0.09, -0.0012, 0.13
 # P, I, D = 0.05, -0.0017, 0.13
 # P, I, D = 0.048, -0.003, 0
