@@ -9,10 +9,57 @@ env.x_threshold = 100
 env.theta_threshold_radians = pi
 
 FRAMERATE = 30
-P, I, D = 0.09, 0.0013, 0.80
-# P, I, D = 0.09, -0.0012, 0.13
-# P, I, D = 0.05, -0.0017, 0.13
-# P, I, D = 0.048, -0.003, 0
+sp, P, I, D = 0, 0.09, 0.0013, 0.80
+sp, P, I, D = 0.1, 0.09, 0.0343, 0.80
+
+inturrupt = False
+
+def generate_until_inturrupt():
+    num = 0
+    while True:
+        num += 1
+        yield num
+        if inturrupt: return
+
+class CartPoleAnimated:
+    def __init__(self, env, render=True):
+        self.env = env
+        self.should_render = render
+        self.reset()
+
+    def reset(self):
+        global interrupt
+        inturrupt = False
+        self.state = self.env.reset()
+        self.tot_score = 0
+        self.accumulated_error = 0
+        self.prev_error = 0
+
+    def step(self, frame_n):
+        if self.should_render: self.draw()
+
+        pos, vel, angle, a_vel = self.state
+
+        sp = 0      # set point
+        pv = angle  # percieved (sensor) value
+        error = sp - pv
+
+        signal = P * error + I * self.accumulated_error + D * (error - self.prev_error)
+
+        self.accumulated_error += error
+        self.prev_error = error
+
+        action = int(signal < 0)
+
+        # running the environment
+        self.state, score, done, _ = env.step(action) # take a random action
+        self.tot_score += score
+        # TODO: what do i do with done? global interrupt var?
+        # TODO: what to return for the render thingy?
+
+
+    def draw(self):
+        self.env.render()
 
 def simulate(env, render=True):
     tot_score = 0
@@ -32,7 +79,6 @@ def simulate(env, render=True):
         # the algorithm
         pos, vel, angle, a_vel = state
 
-        sp = 0
         pv = angle
         error = sp - pv
 
@@ -56,7 +102,7 @@ def simulate(env, render=True):
     return tot_score
 
 simulate(env)
-# scores = [simulate(env, render=False) for _ in tqdm(range(1000), leave=False)]
-print(f'{P} {I} {D}         average score: {sum(scores)/len(scores):.2f}, standard dev {np.std(scores):.2f}')
+scores = [simulate(env, render=False) for _ in tqdm(range(1000), leave=False)]
+print(f'sp: {sp}, {P} {I} {D}         average score: {sum(scores)/len(scores):.2f}, standard dev {np.std(scores):.2f}')
 env.close()
 
